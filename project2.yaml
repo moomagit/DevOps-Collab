@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: This template the following resource configurations
+Description: This template is for the configuration of following resources
 Metadata:
 
 Parameters:
