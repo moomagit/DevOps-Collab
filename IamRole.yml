@@ -1,0 +1,43 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: ---
+# Metadata:
+
+# Parameters:
+
+# Mappings:
+
+# Conditions:
+
+Resources:
+  MyIamGroup:
+    Type: AWS::IAM::Group
+    Properties:
+      GroupName: Engineering_Team
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess
+      Path: /
+      Policies:
+        - PolicyName: DenyBillingAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Deny
+                Action: "aws-portal:*"
+                Resource: "*"
+
+  # MyIamGroup2:
+  #   Type: AWS::IAM::Group
+  #   Properties:
+  #     GroupName: Engineering_Team
+  #     ManagedPolicyArns:
+  #       - arn:aws:iam::aws:policy/AdministratorAccess
+  #     Path: /
+  #     Policies:
+  #       - PolicyName: root
+  #         PolicyDocument:
+  #           Version: "2012-10-17"
+  #           Statement:
+  #             - Effect: Allow
+  #               Action: "*"
+  #               Resource: "*"
+# Outputs:
