@@ -1,0 +1,54 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: ---
+# Metadata:
+
+# Parameters:
+
+# Mappings:
+
+# Conditions:
+
+Resources:
+  MyIamGroup:
+    Type: AWS::IAM::Group
+    Properties:
+      GroupName: Engineering_Team
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess
+      Path: /
+      Policies:
+        - PolicyName: DenyBillingAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Deny
+                Action: "aws-portal:*"
+                Resource: "*"
+
+  MyIamGroup2:
+    Type: AWS::IAM::Group
+    Properties:
+      GroupName: Security_Team
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess
+
+  MyIamGroup3:
+    Type: AWS::IAM::Group
+    Properties:
+      GroupName: Operations_Team
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess
+      Path: /
+      Policies:
+        - PolicyName: AllowUSEast1Only
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Deny
+                Action: "*"
+                Resource: "*"
+                Condition:
+                  StringNotLike:
+                    aws:RequestedRegion: us-east-1
+
+# Outputs:
