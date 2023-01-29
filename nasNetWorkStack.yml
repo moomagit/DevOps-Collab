@@ -294,7 +294,7 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub ${EnvironmentName}-frontend-web-sg
-
+# I added from this section
   BackAlbSg:
     Type: AWS::EC2::SecurityGroup
     Properties:
