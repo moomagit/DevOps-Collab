@@ -404,7 +404,7 @@ Resources:
         - Key: Name
           Value: !Sub ${EnvironmentName}-aud-alb-sg    
 
-#TODO: Continue from security - conclude ssh, rds, efs
+#TODO: Continue from security - conclude ssh, rds, efs (Sunday Done this)
 
 # NAT gateway
   NatGateway1EIP:
