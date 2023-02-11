@@ -1,0 +1,115 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: This template containts the configuration details of deploying a highly available application server
+Parameters:
+    # environment:
+    # Type: String
+    # Default: development
+    # AllowedValues:
+    #   - production
+    #   - development
+    # owner:
+    #   Type: String
+    #   Default: "Fox-Cluster"
+    # ownerEmail:
+    #   Type: String
+    #   Default: foxcluster@gmail.com
+    
+  instanceType:
+    Type: String
+    Default: t2.micro
+    AllowedValues:
+      - t2.micro
+      - t2.nano
+      - m1.small
+      - m1.large
+    Description: Enter t2.micro, m1.small, or m1.large. Default is t2.micro.
+  
+  NetWorkStack:
+    Type: String
+    Description: NetworkStack
+    Default: nasNetWorkStack #exported stack name
+      
+  KeyName:
+    Type: "AWS::EC2::KeyPair::KeyName"
+  
+Mappings:
+  RegionMap:
+    us-east-1:
+      web: ami-0b0dcb5067f052a63
+      app: ami-02b972fec07f1e659
+    us-west-1:
+      web: ami-0f5e8a042c8bfcd5e
+      app: ami-0e587da169af43ce1
+    us-west-2:
+      web: ami-094125af156557ca2
+      app: ami-08e4eaf54ff5ee95e
+    ca-central-1:
+      web: ami-0ee679ef733e3b8e7
+      app: ami-017f4811a06d3e510
+# Launch Template
+  
+  # AutoScaling Group
+  # Target Group
+Resources:
+  ELBTargetGroup:
+    Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
+    Properties:
+      HealthCheckIntervalSeconds: 6
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      Port: 80
+      Protocol: HTTP
+      UnhealthyThresholdCount: 2
+      VpcId: 
+        Fn::ImportValue:
+          Fn::Sub: "${NetWorkStack}-VPCID"
+      TargetType: instance
+
+    # # Load Balanacer
+    # FrontEndAlb:
+    #       Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
+    #       Properties:
+    #         Subnets: !Ref PublicSubnet1
+    #         SecurityGroups:
+    #           - !Ref FrontAlbSg
+    #     ElbListener:
+    #     Type: 'AWS::ElasticLoadBalancingV2::Listener'
+    #     Properties:
+    #       DefaultActions:
+    #         - Type: forward
+    #           TargetGroupArn: !Ref ELBTargetGroup
+    #       LoadBalancerArn: !Ref FrontEndAlb
+    #       Port: 80
+    #       Protocol: HTTP
+    #     AsgConfig:
+    #       Type: AWS::AutoScaling::LaunchConfiguration
+    #       Properties:
+    #         InstanceType: !Ref InstanceType
+    #         SecurityGroups:
+    #         - !Ref FrontWebSg
+    #         ImageId: !FindInMap [RegionMap, !Ref "AWS::Region", HVM64]
+    #         UserData:
+    #           Fn::Base64: 
+    #             !Sub |
+    #               #!/bin/bash
+    #               yum update -y
+    #               yum install -y httpd
+    #               systemctl start httpd
+    #               systemctl enable httpd
+    #               echo "<html><body><h1>Welcome to Nas Finanacial ${AWS::Region}<h1></body></html>" > /var/www/html/index.html
+    #     AsgGroup:
+    #       Type: AWS::AutoScaling::AutoScalingGroup
+    #       DependsOn:
+    #         - ELBTargetGroup
+    #         - ElasticLoadBalancer
+    #       Properties:
+    #         #PropagateAtLaunch: 'true'
+    #         VPCZoneIdentifier: !Ref PublicSubnets
+    #         LaunchConfigurationName: !Ref AsgConfig
+    #         MinSize: '2'
+    #         MaxSize: '4'
+    #         HealthCheckGracePeriod: 300
+    #         MaxInstanceLifetime: 2592000
+    #         TargetGroupARNs:
+    #           - !Ref ELBTargetGroup
