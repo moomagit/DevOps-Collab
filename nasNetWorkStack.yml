@@ -437,3 +437,20 @@ Outputs:
     Value: !Ref NoIngressSecurityGroup
     Export:
       Name: !Sub '${AWS::StackName}-NoIngressSGId'
+  
+  # Launch Template
+  
+  # AutoScaling Group
+  # Target Group
+  ELBTargetGroup:
+       Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
+       Properties:
+         HealthCheckIntervalSeconds: 6
+         HealthCheckTimeoutSeconds: 5
+         HealthyThresholdCount: 2
+         Port: 80
+         Protocol: HTTP
+         UnhealthyThresholdCount: 2
+         VpcId: !Ref CustomVPC
+         TargetType: instance
+  # Load Balanacer

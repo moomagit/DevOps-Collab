@@ -1,0 +1,64 @@
+Description:
+  This template creates IAM users
+
+Parameters:
+  User:
+    NoEcho: 'false'
+    Type: List<String>
+    Description: New user name
+    Default:
+      - User1
+      - User2
+      - User3
+    # MinLength: '4'
+    # MaxLength: '10'
+    # ConstraintDescription: Must be a comma separated list of IAM User names (user1,user2,user3)
+    
+
+  Password:
+    NoEcho: 'true'
+    Type: String
+    Description: New account password
+    MinLength: '1'
+    MaxLength: '41'
+    ConstraintDescription: the password must be between 1 and 41 characters
+  
+  # UserGroup:
+  #   Type: List
+  #   AllowedValues:
+  #     - Engineering_Team1
+  #     - Security_Team1
+  #     - Operations_Team1
+
+Resources:
+  MyIamGroup:
+    Type: AWS::IAM::Group
+    Properties:
+      GroupName: Engineering_Team2
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess
+      Path: /
+      Policies:
+        - PolicyName: DenyBillingAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Deny
+                Action: "aws-portal:*"
+                Resource: "*"
+
+  CFNUser:
+    Type: AWS::IAM::User
+    Properties:
+      Groups: 
+        - !Ref MyIamGroup
+      LoginProfile:
+        Password: !Ref 'Password'
+        PasswordResetRequired: 'true'
+      UserName: !Ref User
+
+# https://iam.amazonaws.com/?Action=ChangePassword
+# &OldPassword=U79}kgds4?
+# &NewPassword=Lb0*1(9xpN
+# &Version=2010-05-08
+# &AUTHPARAMS
