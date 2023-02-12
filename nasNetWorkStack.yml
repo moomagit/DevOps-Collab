@@ -2,7 +2,7 @@
 Description:
   This template deploys a VPC, with 3 public and private subnets spread
   across three Availability Zones. It deploys an internet gateway, with a default
-  route on the public subnets, and three NAT gateways in three public subnets.
+  route on the public subnets, and three NAT gateways in three public subnets. The stack name is networkStack
 
 Parameters:
   EnvironmentName:
@@ -450,7 +450,7 @@ Resources:
       Egress: true
       RuleAction: allow
       CidrBlock: 0.0.0.0/0
-#TODO: Continue from security - conclude ssh, rds, efs
+#TODO: Continue from security - conclude ssh, rds,
 
 # NAT gateway
   NatGateway1EIP:
@@ -597,3 +597,45 @@ Outputs:
     Value: !Ref NoIngressSecurityGroup
     Export:
       Name: !Sub '${AWS::StackName}-NoIngressSGId'
+  
+  FrontAlbSg:
+    Description: A reference to the security group of the internet facing ALB
+    Value: !Ref FrontAlbSg
+    Export:
+      Name: !Sub '${AWS::StackName}-FrontAlbSgId'
+
+  FrontWebSg:
+    Description: A reference to the security group of the webserver in the public subnet
+    Value: !Ref FrontWebSg
+    Export:
+      Name: !Sub '${AWS::StackName}-FrontWebSgId'
+  
+  BackAlbSg:
+    Description: A reference to the security group of the ALB in the private subnet
+    Value: !Ref BackAlbSg
+    Export:
+      Name: !Sub '${AWS::StackName}-BackAlbSgId'
+  
+  BackWebSg:
+    Description: A reference to the security group of the webserver in the private subnet
+    Value: !Ref BackWebSg
+    Export:
+      Name: !Sub '${AWS::StackName}-BackWebSgId'
+  
+  RdsSg:
+    Description: A reference to the security group of the relational database
+    Value: !Ref RdsSg
+    Export:
+      Name: !Sub '${AWS::StackName}-RdsSgId'
+
+  EfsSg:
+    Description: A reference to the security group of the elastic file system
+    Value: !Ref EfsSg
+    Export:
+      Name: !Sub '${AWS::StackName}-EfsSgId'
+    
+  AudAlbSg:
+    Description: A reference to the security group of the auditor's alb
+    Value: !Ref AudAlbSg
+    Export:
+      Name: !Sub '${AWS::StackName}-AudAlbSgId'
