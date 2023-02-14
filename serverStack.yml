@@ -30,6 +30,7 @@ Parameters:
     Description: NetworkStack
     Default: networkStack #exported stack name
       
+
   KeyName:
     Type: "AWS::EC2::KeyPair::KeyName"
   
@@ -38,24 +39,104 @@ Mappings:
     us-east-1:
       web: ami-0b0dcb5067f052a63
       app: ami-02b972fec07f1e659
+    us-east-2:
+      web: ami-05bfbece1ed5beb54
     us-west-1:
       web: ami-0f5e8a042c8bfcd5e
       app: ami-0e587da169af43ce1
     us-west-2:
-      web: ami-094125af156557ca2
+      web: ami-06e85d4c3149db26a
       app: ami-08e4eaf54ff5ee95e
     ca-central-1:
       web: ami-0ee679ef733e3b8e7
       app: ami-017f4811a06d3e510
 # Launch Template
   
-  # AutoScaling Group
-  # Target Group
+# AutoScaling Group
+# Target Group
 Resources:
+# Launch Template
+  NasSSMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Description: ec2-ssm role for accessing the ec2-instance
+      ManagedPolicyArns: 
+        - arn:aws:iam::aws:policy/AmazonSSMFullAccess
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+      RoleName: ec2-ssm
+  
+  MyIamInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      InstanceProfileName: IamInstanceProfile
+      Path: "/"
+      Roles:
+        - !Ref NasSSMRole
+  
+  NaslaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateName: frontend-web-LT 
+      LaunchTemplateData:
+        IamInstanceProfile:
+          Arn: !GetAtt
+          - MyIamInstanceProfile
+          - Arn
+        DisableApiTermination: true
+        ImageId:
+          !FindInMap [RegionMap, !Ref AWS::Region, web]
+        InstanceType: !Ref instanceType
+        KeyName: !Ref KeyName
+        SecurityGroupIds:
+          - Fn::ImportValue:
+              Fn::Sub: "${NetWorkStack}-FrontWebSgId"
+        UserData:
+          Fn::Base64: !Sub |
+            #!/bin/bash
+            yum update -y
+            yum install -y httpd
+            systemctl start httpd
+            systemctl enable httpd
+            echo '<center><h1 style="color:blue;font-size:300%;border:2px solid blue;background-color:lightgrey;">Welcome to NAS Financial Group </h1></center>' > /var/www/html/index.html
+
+  # AutoScaling Group
+  NasASG:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    DependsOn:
+      - ELBTargetGroup
+      - FrontEndAlb
+    Properties:
+      AutoScalingGroupName: frontend-web-ASG
+      LaunchTemplate:
+        LaunchTemplateId: !Ref NaslaunchTemplate
+        Version: !GetAtt NaslaunchTemplate.LatestVersionNumber
+      MaxSize: '4'
+      MinSize: '1'
+      DesiredCapacity: '2'
+      VPCZoneIdentifier:
+        - Fn::ImportValue:
+              Fn::Sub: "${NetWorkStack}-PublicsubnetOneId"
+        - Fn::ImportValue:
+            Fn::Sub: "${NetWorkStack}-PublicsubnetTwoId"
+        - Fn::ImportValue:
+            Fn::Sub: "${NetWorkStack}-PublicsubnetThreeId"
+      TargetGroupARNs:
+        - !Ref ELBTargetGroup
+
+# Target Group
   ELBTargetGroup:
     Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
     Properties:
-      HealthCheckIntervalSeconds: 6
+      HealthCheckIntervalSeconds: 30
       HealthCheckTimeoutSeconds: 5
       HealthyThresholdCount: 2
       Port: 80
@@ -101,6 +182,41 @@ Resources:
           - 
             Key: "routing.http.drop_invalid_header_fields.enabled"
             Value: "false"
+
+  # HTTPSListener:
+  #   Type: "AWS::ElasticLoadBalancingV2::Listener"
+  #   Properties:
+  #       LoadBalancerArn: !Ref ApplicationLoadBalancer
+  #       Port: 443
+  #       Protocol: "HTTPS"
+  #       SslPolicy: "ELBSecurityPolicy-2016-08"
+  #       # Certificates: 
+  #       #   - 
+  #       #     CertificateArn: arn:aws:acm:eu-central-1:**************:certificate/*********************
+            
+  #       DefaultActions: 
+  #         - 
+  #           Order: 1
+  #           TargetGroupArn: !Ref Test1TargetGroup
+  #           Type: "forward"
+  ElbListener:
+    Type: 'AWS::ElasticLoadBalancingV2::Listener'
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref ELBTargetGroup
+      LoadBalancerArn: !Ref FrontEndAlb
+      Port: 80
+      Protocol: HTTP
+
+
+
+
+
+
+
+
+
   # HTTPSListener:
   #   Type: "AWS::ElasticLoadBalancingV2::Listener"
   #   Properties:
