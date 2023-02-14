@@ -2,8 +2,16 @@ AWSTemplateFormatVersion: 2010-09-09
 Description: ---
 # Metadata:
 
-# Parameters:
+Parameters:
+  NetWorkStack:
+    Type: String
+    Description: NetworkStack
+    Default: networkStack #exported stack name
 
+  OwnerName:
+    Description: The name that is prefixed to resource names
+    Type: String
+    Default: nas
 # Mappings:
 
 # Conditions:
@@ -12,7 +20,7 @@ Resources:
   MyIamGroup:
     Type: AWS::IAM::Group
     Properties:
-      GroupName: Engineering_Team
+      GroupName: !Sub ${OwnerName}_Engineering_Team
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AdministratorAccess
       Path: /
@@ -28,14 +36,14 @@ Resources:
   MyIamGroup2:
     Type: AWS::IAM::Group
     Properties:
-      GroupName: Security_Team
+      GroupName: !Sub ${OwnerName}_Security_Team
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AdministratorAccess
 
   MyIamGroup3:
     Type: AWS::IAM::Group
     Properties:
-      GroupName: Operations_Team
+      GroupName: !Sub ${OwnerName}_Operations_Team
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AdministratorAccess
       Path: /
@@ -51,4 +59,48 @@ Resources:
                   StringNotLike:
                     aws:RequestedRegion: us-east-1
 
-# Outputs:
+  NasSSMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Description: ec2-ssm role for accessing the ec2-instance
+      ManagedPolicyArns: 
+        - arn:aws:iam::aws:policy/AmazonSSMFullAccess
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+      RoleName: !Sub ${OwnerName}-ec2-ssm
+
+  MyIamInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      InstanceProfileName: IamInstanceProfile
+      Path: "/"
+      Roles:
+        - !Ref NasSSMRole
+
+Outputs:
+  NasSSMRole:
+    Description: A reference to the MyIamInstanceProfile role
+    Value: !Ref NasSSMRole
+    Export:
+      Name: !Sub '${AWS::StackName}-NasSSMRole'
+
+  MyIamInstanceProfile:
+    Description: A reference to the MyIamInstanceProfile role
+    Value: !Ref MyIamInstanceProfile
+    Export:
+      Name: !Sub '${AWS::StackName}-MyIamInstanceProfile'
+
+  MyIamInstanceProfile2:
+    Description: A reference to the MyIamInstanceProfile role
+    Value: !GetAtt MyIamInstanceProfile.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-Arn'
+
