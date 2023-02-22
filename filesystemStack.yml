@@ -1,0 +1,89 @@
+AWSTemplateFormatVersion: 2010-09-09
+Parameters:
+  NetWorkStack:
+    Type: String
+    Description: NetworkStack
+    Default: networkStack #exported stack name
+      
+  PermissionStack:
+    Type: String
+    Description: IAM Roles and Permissions Stack
+    Default: permissionStack #exported stack name
+
+Resources:
+  FileSystemResource:
+    Type: 'AWS::EFS::FileSystem'
+    Properties:
+      BackupPolicy:
+        Status: ENABLED
+      PerformanceMode: generalPurpose
+      Encrypted: true
+      LifecyclePolicies:
+        - TransitionToIA: AFTER_30_DAYS
+        - TransitionToPrimaryStorageClass: AFTER_1_ACCESS
+      FileSystemTags:
+        - Key: Name
+          Value: nasFileSystem
+      
+      KmsKeyId: !GetAtt 
+        - key
+        - Arn
+  key:
+    Type: AWS::KMS::Key
+    Properties:
+      KeyPolicy:
+        Version: 2012-10-17
+        Id: key-default-1
+        Statement:
+          - Sid: Allow administration of the key
+            Effect: Allow
+            Principal:
+              AWS: !Join 
+                - ''
+                - - 'arn:aws:iam::'
+                  - !Ref 'AWS::AccountId'
+                  - ':root'
+            Action:
+              - 'kms:*'
+            Resource: 
+              - '*'
+
+  MountTargetResource1:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId: !Ref FileSystemResource
+      SubnetId:
+        Fn::ImportValue:
+          Fn::Sub: "${NetWorkStack}-PublicsubnetOneId"
+      SecurityGroups:
+      - Fn::ImportValue:
+          Fn::Sub: "${NetWorkStack}-EfsSgId"
+
+  MountTargetResource2:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId: !Ref FileSystemResource
+      SubnetId:
+        Fn::ImportValue:
+          Fn::Sub: "${NetWorkStack}-PublicsubnetTwoId"
+      SecurityGroups:
+      - Fn::ImportValue:
+          Fn::Sub: "${NetWorkStack}-EfsSgId"
+      
+      
+  MountTargetResource3:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId: !Ref FileSystemResource
+      SubnetId:
+        Fn::ImportValue:
+          Fn::Sub: "${NetWorkStack}-PublicsubnetThreeId"
+      SecurityGroups:
+      - Fn::ImportValue:
+          Fn::Sub: "${NetWorkStack}-EfsSgId"
+Outputs:
+  filesystemId:
+    Description: A reference to the ID of the file sytem
+    Value: !Ref FileSystemResource
+    Export:
+      Name: !Sub '${AWS::StackName}-EfsId'

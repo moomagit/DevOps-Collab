@@ -1,20 +1,28 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: ---
-# Metadata:
-
+Description: This template deploys IAM groups, users, instanceprofile and SSM role
 Parameters:
-  NetWorkStack:
-    Type: String
-    Description: NetworkStack
-    Default: networkStack #exported stack name
-
   OwnerName:
     Description: The name that is prefixed to resource names
     Type: String
     Default: nas
-# Mappings:
+  
+  User:
+    NoEcho: 'false'
+    Type: String
+    Description: New user name
+    Default: User1
+    MinLength: '4'
+    MaxLength: '10'
+    ConstraintDescription: Must be a comma separated list of IAM User names (user1,user2,user3)
+    
 
-# Conditions:
+  Password:
+    NoEcho: 'true'
+    Type: String
+    Description: New account password
+    MinLength: '6'
+    MaxLength: '15'
+    ConstraintDescription: the password must be between 1 and 15 characters
 
 Resources:
   MyIamGroup:
@@ -58,6 +66,16 @@ Resources:
                 Condition:
                   StringNotLike:
                     aws:RequestedRegion: us-east-1
+
+  NasUser:
+    Type: AWS::IAM::User
+    Properties:
+      Groups: 
+        - !Ref MyIamGroup
+      LoginProfile:
+        Password: !Ref 'Password'
+        PasswordResetRequired: 'true'
+      UserName: !Ref User
 
   NasSSMRole:
     Type: AWS::IAM::Role
