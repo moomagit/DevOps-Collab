@@ -251,16 +251,6 @@ Resources:
           FromPort: 443
           ToPort: 443
           CidrIp: 0.0.0.0/0
-                
-      # SecurityGroupEgress:
-      #   - IpProtocol: tcp
-      #     FromPort: 80
-      #     ToPort: 80
-      #     CidrIp: 0.0.0.0/0
-      #   - IpProtocol: tcp
-      #     FromPort: 443
-      #     ToPort: 443
-      #     CidrIp: 0.0.0.0/0
       Tags:
         - Key: Name
           Value: !Sub ${EnvironmentName}-frontend-alb-sg
@@ -355,7 +345,7 @@ Resources:
     Type: AWS::RDS::DBSubnetGroup
     Properties: 
       DBSubnetGroupDescription: NAS Subnet Group
-      DBSubnetGroupName: nassubnets
+      DBSubnetGroupName: nas-db-SubnetGroup
       SubnetIds: 
         - !Ref PrivateSubnet1
         - !Ref PrivateSubnet2
@@ -599,6 +589,12 @@ Outputs:
     Value: !Ref RdsSg
     Export:
       Name: !Sub '${AWS::StackName}-RdsSgId'
+
+  NasRdsSubnetGroup:
+    Description: A reference to the relational database Subnet group name
+    Value: !Ref NasRdsSubnetGroup
+    Export:
+      Name: !Sub '${AWS::StackName}-db-SubnetGroupName'
 
   EfsSg:
     Description: A reference to the security group of the elastic file system

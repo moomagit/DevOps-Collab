@@ -56,7 +56,6 @@ Resources:
       MasterUsername: !Ref DBUsername
       MasterUserPassword: !Ref DBPassword
       DBClusterInstanceClass: !Ref DBInstanceType
-      DBSubnetGroupName: !Ref NasSubnetGroup
       Engine: mysql
       EngineVersion: '8.0.28'
       BackupRetentionPeriod: 7
@@ -64,7 +63,10 @@ Resources:
       StorageType: io1
       Iops: 3000
       Port: 3306
-      DeletionProtection: false
+      DeletionProtection: "false"
+      DBSubnetGroupName:
+        Fn::ImportValue:
+           !Sub "${NetWorkStack}-db-SubnetGroupName"
       VpcSecurityGroupIds:
         - Fn::ImportValue:
            !Sub "${NetWorkStack}-RdsSgId"
