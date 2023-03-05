@@ -86,4 +86,8 @@ Outputs:
     Description: A reference to the ID of the file sytem
     Value: !Ref FileSystemResource
     Export:
-      Name: !Sub '${AWS::StackName}-EfsId'
+      Name: MyEFSFileSystemId #!Sub '${AWS::StackName}-EfsId'
+  # FileSystemDnsName:
+  #   Value: !GetAtt FileSystemResource.DnsName
+  #   Export:
+  #     Name: MyEFSFileSystemDnsName

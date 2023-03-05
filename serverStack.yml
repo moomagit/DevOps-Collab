@@ -30,10 +30,10 @@ Parameters:
     Description: NetworkStack
     Default: networkStack #exported stack name
   
-  FileSystemStack:
-    Type: String
-    Description: filesystemStack-EfsId
-    Default: filesystemStack #exported stack name
+  # FileSystemStack:
+  #   Type: String
+  #   Description: filesystemStack-EfsId
+  #   Default: filesystemStack #exported stack name
       
   PermissionStack:
     Type: String
@@ -60,9 +60,80 @@ Mappings:
       web: ami-0ee679ef733e3b8e7
       app: ami-017f4811a06d3e510
 Resources:
+  FileSystemResource:
+    Type: 'AWS::EFS::FileSystem'
+    Properties:
+      BackupPolicy:
+        Status: ENABLED
+      PerformanceMode: generalPurpose
+      Encrypted: true
+      LifecyclePolicies:
+        - TransitionToIA: AFTER_30_DAYS
+        - TransitionToPrimaryStorageClass: AFTER_1_ACCESS
+      FileSystemTags:
+        - Key: Name
+          Value: nasFileSystem
+      
+      KmsKeyId: !GetAtt 
+        - key
+        - Arn
+  key:
+    Type: AWS::KMS::Key
+    Properties:
+      KeyPolicy:
+        Version: 2012-10-17
+        Id: key-default-1
+        Statement:
+          - Sid: Allow administration of the key
+            Effect: Allow
+            Principal:
+              AWS: !Join 
+                - ''
+                - - 'arn:aws:iam::'
+                  - !Ref 'AWS::AccountId'
+                  - ':root'
+            Action:
+              - 'kms:*'
+            Resource: 
+              - '*'
+
+  MountTargetResource1:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId: !Ref FileSystemResource
+      SubnetId:
+        Fn::ImportValue:
+          Fn::Sub: "${NetWorkStack}-PublicsubnetOneId"
+      SecurityGroups:
+      - Fn::ImportValue:
+          Fn::Sub: "${NetWorkStack}-EfsSgId"
+
+  MountTargetResource2:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId: !Ref FileSystemResource
+      SubnetId:
+        Fn::ImportValue:
+          Fn::Sub: "${NetWorkStack}-PublicsubnetTwoId"
+      SecurityGroups:
+      - Fn::ImportValue:
+          Fn::Sub: "${NetWorkStack}-EfsSgId"
+      
+  MountTargetResource3:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId: !Ref FileSystemResource
+      SubnetId:
+        Fn::ImportValue:
+          Fn::Sub: "${NetWorkStack}-PublicsubnetThreeId"
+      SecurityGroups:
+      - Fn::ImportValue:
+          Fn::Sub: "${NetWorkStack}-EfsSgId"
+
 # Launch Template
   NaslaunchTemplate:
     Type: AWS::EC2::LaunchTemplate
+    DependsOn: [FileSystemResource, key, MountTargetResource1, MountTargetResource2, MountTargetResource3]
     Properties:
       LaunchTemplateName: frontend-web-LT 
       LaunchTemplateData:
@@ -81,16 +152,22 @@ Resources:
         UserData:
           Fn::Base64: !Sub |
             #!/bin/bash
-            yum update -y
+            sudo su
+            mkdir /var/www/
+            mkdir /var/www/html
+            sudo mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport ${FileSystemResource}.efs.${AWS::Region}.amazonaws.com:/ /var/www/html/
+            yum install -y amazon-efs-utils
+            echo "${FileSystemResource}.efs.${AWS::Region}.amazonaws.com:/ /var/www/html/ efs defaults,_netdev 0 0" >> /etc/fstab
             yum install -y httpd
             systemctl start httpd
             systemctl enable httpd
-            FileSystemStack:
-              Fn::ImportValue:
-                !Sub "${FileSystemStack}-EfsId"
-            echo '<center><h1 style="color:blue;font-size:300%;border:2px solid blue;background-color:lightgrey;">Welcome to NAS Financial Group ${FileSystemStack}</h1></center>' > /var/www/html/index.html
+            systemctl status httpd
+            wget https://wordpress.org/latest.tar.gz
+            tar -xzf latest.tar.gz
+            cp -r wordpress/* /var/www/html/
+            amazon-linux-extras install -y lamp-mariadb10.2-php7.2 php7.2
+            systemctl restart httpd
             
-
   # AutoScaling Group
   NasASG:
     Type: AWS::AutoScaling::AutoScalingGroup
