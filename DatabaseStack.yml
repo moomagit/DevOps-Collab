@@ -1,0 +1,76 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: ---
+
+Parameters:
+  DBInitialname:
+    Description: Database Initial name
+    Type: String
+    Default: customer_info
+
+  DBUsername:
+    NoEcho: 'true'
+    Description: Username for PostgreSQL database access
+    Type: String
+    MinLength: '2'
+    MaxLength: '16'
+    AllowedPattern: '[a-zA-Z][a-zA-Z0-9]*'
+    ConstraintDescription: must begin with a letter and contain only alphanumeric characters.
+  
+  DBPassword:
+    NoEcho: 'true'
+    Description: Password for PostgreSQL database access
+    Type: String
+    MinLength: '8'
+    MaxLength: '41'
+    AllowedPattern: '[a-zA-Z0-9]*'
+    ConstraintDescription: must contain only alphanumeric characters.
+
+  NetWorkStack:
+    Type: String
+    Description: NetworkStack
+    Default: networkStack #exported stack name
+  
+  DBInstanceType:
+    Description: Database Instance Class
+    Type: String
+    Default: db.m5d.xlarge
+    AllowedValues:
+      - db.t2.xlarge
+      - db.r6g.2xlarge
+      - db.t3.small
+      - db.t3.medium
+      - db.t3.large
+      - db.t4g.large
+      - db.m6gd.xlarge
+      - db.m5d.xlarge
+
+# Mappings:
+
+Resources:
+  NasDb:
+    Type: AWS::RDS::DBCluster
+    Properties:
+      DBClusterIdentifier: nas-db-cluster
+      AllocatedStorage: 400
+      DatabaseName: !Ref DBInitialname
+      MasterUsername: !Ref DBUsername
+      MasterUserPassword: !Ref DBPassword
+      DBClusterInstanceClass: !Ref DBInstanceType
+      Engine: mysql
+      EngineVersion: '8.0.28'
+      BackupRetentionPeriod: 7
+      DBClusterParameterGroupName: default.mysql8.0
+      StorageType: io1
+      Iops: 3000
+      Port: 3306
+      DeletionProtection: "false"
+      DBSubnetGroupName:
+        Fn::ImportValue:
+           !Sub "${NetWorkStack}-db-SubnetGroupName"
+      VpcSecurityGroupIds:
+        - Fn::ImportValue:
+           !Sub "${NetWorkStack}-RdsSgId"
+
+
+
+# Outputs:
