@@ -15,6 +15,44 @@ Parameters:
     #   Type: String
     #   Default: foxcluster@gmail.com
     
+  DBName:
+    Description: Database Initial name
+    Type: String
+    Default: customer_info
+
+  DBUsername:
+    NoEcho: 'false'
+    Description: Username for database access
+    Type: String
+    MinLength: '2'
+    MaxLength: '16'
+    AllowedPattern: '[a-zA-Z][a-zA-Z0-9]*'
+    ConstraintDescription: must begin with a letter and contain only alphanumeric characters.
+    Default: nasadmin
+  
+  DBPassword:
+    NoEcho: 'true'
+    Description: Password for database access
+    Type: String
+    MinLength: '8'
+    MaxLength: '41'
+    AllowedPattern: '[a-zA-Z0-9]*'
+    ConstraintDescription: must contain only alphanumeric characters.
+
+  DBInstanceType:
+    Description: Database Instance Class
+    Type: String
+    Default: db.m5d.xlarge
+    AllowedValues:
+      - db.t2.xlarge
+      - db.r6g.2xlarge
+      - db.t3.small
+      - db.t3.medium
+      - db.t3.large
+      - db.t4g.large
+      - db.m6gd.xlarge
+      - db.m5d.xlarge
+  
   instanceType:
     Type: String
     Default: t2.micro
@@ -30,11 +68,6 @@ Parameters:
     Description: NetworkStack
     Default: networkStack #exported stack name
   
-  # FileSystemStack:
-  #   Type: String
-  #   Description: filesystemStack-EfsId
-  #   Default: filesystemStack #exported stack name
-      
   PermissionStack:
     Type: String
     Description: IAM Roles and Permissions Stack
@@ -60,6 +93,30 @@ Mappings:
       web: ami-0ee679ef733e3b8e7
       app: ami-017f4811a06d3e510
 Resources:
+  NasDb:
+    Type: AWS::RDS::DBCluster
+    Properties:
+      DBClusterIdentifier: nas-db-cluster
+      AllocatedStorage: 400
+      DatabaseName: !Ref DBName
+      MasterUsername: !Ref DBUsername
+      MasterUserPassword: !Ref DBPassword
+      DBClusterInstanceClass: !Ref DBInstanceType
+      Engine: mysql
+      EngineVersion: '8.0.28'
+      BackupRetentionPeriod: 7
+      DBClusterParameterGroupName: default.mysql8.0
+      StorageType: io1
+      Iops: 3000
+      Port: 3306
+      DeletionProtection: "false"
+      DBSubnetGroupName:
+        Fn::ImportValue:
+           !Sub "${NetWorkStack}-db-SubnetGroupName"
+      VpcSecurityGroupIds:
+        - Fn::ImportValue:
+           !Sub "${NetWorkStack}-RdsSgId"
+
   FileSystemResource:
     Type: 'AWS::EFS::FileSystem'
     Properties:
@@ -133,7 +190,7 @@ Resources:
 # Launch Template
   NaslaunchTemplate:
     Type: AWS::EC2::LaunchTemplate
-    DependsOn: [FileSystemResource, key, MountTargetResource1, MountTargetResource2, MountTargetResource3]
+    DependsOn: [FileSystemResource, key, MountTargetResource1, MountTargetResource2, MountTargetResource3, NasDb]
     Properties:
       LaunchTemplateName: frontend-web-LT 
       LaunchTemplateData:
@@ -165,9 +222,14 @@ Resources:
             wget https://wordpress.org/latest.tar.gz
             tar -xzf latest.tar.gz
             cp -r wordpress/* /var/www/html/
+            cp wordpress/wp-config-sample.php /var/www/html/wp-config.php
+            sed -i "s/database_name_here/${DBName}/g" /var/www/html/wp-config.php
+            sed -i "s/username_here/${DBUsername}/g" /var/www/html/wp-config.php
+            sed -i "s/password_here/${DBPassword}/g" /var/www/html/wp-config.php
+            sed -i "s/localhost/${NasDb.Endpoint.Address}/g" /var/www/html/wp-config.php
             amazon-linux-extras install -y lamp-mariadb10.2-php7.2 php7.2
             systemctl restart httpd
-            
+             
   # AutoScaling Group
   NasASG:
     Type: AWS::AutoScaling::AutoScalingGroup
