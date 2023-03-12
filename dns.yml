@@ -48,5 +48,5 @@ Resources:
           HostedZoneId: !GetAtt MyBucket.DomainName 
           DNSName: !GetAtt MyBucket.WebsiteURL
         Geolocation:
-          CountryCode: !If [IsUSVisitor, null, AF, EU, SA, OC, AS]
+          ContinentCode: !If [IsUSVisitor, null, AF, EU, SA, OC, AS]
       
