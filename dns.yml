@@ -1,0 +1,52 @@
+Parameters:
+  IsUSVisitor:
+    Type: String
+    AllowedValues: [true, false]
+    Default: false
+  
+  HostedZoneId:
+    Type: String
+    Description: Hosted zone ID from Route 53
+
+  RecordSets:
+    Type: String
+    Description: recordset name
+  
+  serverStack:
+    Type: String
+    Description: ServerStack
+    Default: networkStack #exported stack name
+
+Resources:
+  MyBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      AccessControl: PublicRead
+      BucketName: nastest1234
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: error.html
+  
+  myDNS:
+    Type: AWS::Route53::RecordSetGroup
+    DependsOn: [MyBucket]
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      # HostedZoneName: momaejalile.click.
+      Comment: Zone apex alias targeted to myELB LoadBalancer.
+      RecordSets:
+      - Name: !Ref RecordSets
+        Type: A
+        AliasTarget:
+          HostedZoneId: Z1H1FL5HABSF5
+          DNSName: FrontEndAlb-1519022025.us-west-2.elb.amazonaws.com
+        Geolocation:
+          CountryCode: US
+      - Name: !Ref RecordSets
+        Type: A
+        AliasTarget:
+          HostedZoneId: !GetAtt MyBucket.DomainName 
+          DNSName: !GetAtt MyBucket.WebsiteURL
+        Geolocation:
+          ContinentCode: !If [IsUSVisitor, null, AF, EU, SA, OC, AS]
+      

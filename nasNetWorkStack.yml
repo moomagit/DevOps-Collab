@@ -337,6 +337,10 @@ Resources:
           FromPort: 3306
           ToPort: 3306
           SourceSecurityGroupId: !Ref BackWebSg
+        - IpProtocol: tcp
+          FromPort: 3306
+          ToPort: 3306
+          SourceSecurityGroupId: !Ref FrontWebSg
       Tags:
         - Key: Name
           Value: !Sub ${EnvironmentName}-rds-sg
