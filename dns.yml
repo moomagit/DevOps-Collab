@@ -1,52 +1,92 @@
 Parameters:
-  IsUSVisitor:
-    Type: String
-    AllowedValues: [true, false]
-    Default: false
   
-  HostedZoneId:
+  ALBHostedZoneId:
     Type: String
     Description: Hosted zone ID from Route 53
+    Default: Z1H1FL5HABSF5
+  
+  S3HostedZoneId:
+    Type: String
+    Description: Hosted zone ID from Route 53
+    Default: Z3BJ6K6RIION7M
+  
+  DnsHostedZoneId:
+    Type: String
+    Description: Hosted zone ID from Route 53
+    Default: Z029856838X6MK6DAQ90R
+  
 
-  RecordSets:
+  FoxRecordSets:
     Type: String
     Description: recordset name
+    Default: fox.nasfinancialgroup.com
   
   serverStack:
     Type: String
     Description: ServerStack
-    Default: networkStack #exported stack name
+    Default: serverStack #exported stack name
+
+  CountryCode:
+    Type: String
+    Default: US
+  
+  ContinentCode:
+    Type: String
+    Default: NA
 
 Resources:
+  MyBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref MyBucket
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal: "*"
+            Action: s3:GetObject
+            Resource: !Join 
+              - ''
+              - - 'arn:aws:s3:::'
+                - !Ref MyBucket
+                - /*
+      
   MyBucket:
     Type: AWS::S3::Bucket
     Properties:
       AccessControl: PublicRead
-      BucketName: nastest1234
+      BucketName: fox.nasfinancialgroup.com
       WebsiteConfiguration:
         IndexDocument: index.html
         ErrorDocument: error.html
   
-  myDNS:
-    Type: AWS::Route53::RecordSetGroup
-    DependsOn: [MyBucket]
+  USRecordSet:
+    Type: AWS::Route53::RecordSet
     Properties:
-      HostedZoneId: !Ref HostedZoneId
-      # HostedZoneName: momaejalile.click.
-      Comment: Zone apex alias targeted to myELB LoadBalancer.
-      RecordSets:
-      - Name: !Ref RecordSets
-        Type: A
-        AliasTarget:
-          HostedZoneId: Z1H1FL5HABSF5
-          DNSName: FrontEndAlb-1519022025.us-west-2.elb.amazonaws.com
-        Geolocation:
-          CountryCode: US
-      - Name: !Ref RecordSets
-        Type: A
-        AliasTarget:
-          HostedZoneId: !GetAtt MyBucket.DomainName 
-          DNSName: !GetAtt MyBucket.WebsiteURL
-        Geolocation:
-          ContinentCode: !If [IsUSVisitor, null, AF, EU, SA, OC, AS]
+      HostedZoneId: !Ref DnsHostedZoneId 
+      # HostedZoneName: !Ref FoxRecordSets
+      Name: !Ref FoxRecordSets
+      Type: A
+      AliasTarget:
+        HostedZoneId: !Ref ALBHostedZoneId
+        DNSName: FrontEndAlb-1256399545.us-west-2.elb.amazonaws.com
+        EvaluateTargetHealth: true
+      GeoLocation:
+        CountryCode: US
+      SetIdentifier: US
+
+  OtherRecordSet:
+    Type: AWS::Route53::RecordSet
+    DependsOn: [MyBucket, MyBucketPolicy]
+    Properties:
+      HostedZoneId: !Ref DnsHostedZoneId 
+      # HostedZoneName: !Ref FoxRecordSets
+      Name: !Ref FoxRecordSets
+      Type: A
+      AliasTarget:
+        HostedZoneId: !Ref S3HostedZoneId
+        DNSName: !GetAtt MyBucket.WebsiteURL
+        EvaluateTargetHealth: false
+      GeoLocation:
+        CountryCode: "*"
+      SetIdentifier: Default
       
