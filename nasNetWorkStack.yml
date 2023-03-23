@@ -8,7 +8,7 @@ Parameters:
   EnvironmentName:
     Description: An environment name that is prefixed to resource names
     Type: String
-    Default: nas
+    Default: leopard-nas
 
   VpcCIDR:
     Description: Please enter the IP range (CIDR notation) for this VPC
@@ -50,7 +50,7 @@ Parameters:
     Type: String
     MinLength: "9"
     MaxLength: "18"
-    Default: 174.117.204.234/32
+    Default: 199.126.245.108/32
     AllowedPattern: "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})"
     ConstraintDescription: must be a valid IP CIDR range of the form x.x.x.x/x.
     # AllowedValues: [174.117.204.234/32, 142.59.115.166/32]
@@ -277,7 +277,7 @@ Resources:
         - Key: Name
           Value: !Sub ${EnvironmentName}-frontend-web-sg
 
-# I added from this section
+# Backend Application Load Balancer Security Group
   BackAlbSg:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -288,14 +288,14 @@ Resources:
           FromPort: 80
           ToPort: 80
           CidrIp: !Ref VpcCIDR
-        - IpProtocol: tcp
-          FromPort: 443
-          ToPort: 443
-          CidrIp: !Ref VpcCIDR
-        - IpProtocol: tcp
-          FromPort: 22
-          ToPort: 22
-          CidrIp: !Ref SSHLocation
+        # - IpProtocol: tcp
+        #   FromPort: 443
+        #   ToPort: 443
+        #   CidrIp: !Ref VpcCIDR
+        # - IpProtocol: tcp
+        #   FromPort: 22
+        #   ToPort: 22
+        #   CidrIp: !Ref SSHLocation
       Tags:
         - Key: Name
           Value: !Sub ${EnvironmentName}-backend-alb-sg
@@ -326,7 +326,7 @@ Resources:
         - Key: Name
           Value: !Sub ${EnvironmentName}-backend-web-sg
 
-# Database Security Group
+# Relational Database Security Group
   RdsSg:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -344,7 +344,9 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub ${EnvironmentName}-rds-sg
-  
+
+#   Database Subnet Group
+
   NasRdsSubnetGroup:
     Type: AWS::RDS::DBSubnetGroup
     Properties: 
@@ -392,6 +394,9 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub ${EnvironmentName}-aud-alb-sg
+
+# Network Access Control (NACL)
+
   NasNACL:
     Type: AWS::EC2::NetworkAcl
     Properties:
