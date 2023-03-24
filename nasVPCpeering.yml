@@ -1,0 +1,43 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: This template deploys a resource to peer the auditors account to nas vpc.
+
+Parameters:
+  NetWorkStack:
+    Type: String
+    Description: NetworkStack
+    Default: networkStack #exported stack name
+
+# Mappings: 
+
+# Conditions: 
+
+Resources:
+  nasVPCpeering:
+    Type: AWS::EC2::VPCPeeringConnection
+    Properties: 
+      PeerOwnerId: '362013628963'
+      PeerRegion: us-east-2
+      PeerRoleArn: arn:aws:iam::362013628963:role/leopard-nas-peeringRole
+      PeerVpcId: vpc-02d037cb039e72ce2
+      Tags: 
+        - Key: Name
+          Value: leopard-nas-AuditorsCrossAccount
+      VpcId:
+        # Fn::ImportValue:
+        #   Fn::Sub: "${NetWorkStack}-VPCID"
+ 
+  # nasVPCpeering2:
+  #   Type: AWS::EC2::VPCPeeringConnection
+  #   Properties: 
+  #     PeerOwnerId: '543489202057'
+  #     PeerRegion: us-west-1
+  #     PeerRoleArn: arn:aws:iam::543489202057:role/perring-role
+  #     PeerVpcId: vpc-0d7aab20b37414e46
+  #     Tags: 
+  #       - Key: Name
+  #         Value: leopard-nas-Auditor2CrossAccount
+  #     VpcId:
+  #       Fn::ImportValue:
+  #         Fn::Sub: "${NetWorkStack}-VPCID"
+
+# Outputs:

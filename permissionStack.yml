@@ -4,16 +4,82 @@ Parameters:
   OwnerName:
     Description: The name that is prefixed to resource names
     Type: String
-    Default: nas
+    Default: leopard-nas
   
-  User:
+  User10:
     NoEcho: 'false'
     Type: String
-    Description: New user name
-    Default: User1
+    Description: Add an Engineer user name
+    Default: "Sunita"
     MinLength: '4'
-    MaxLength: '10'
-    ConstraintDescription: Must be a comma separated list of IAM User names (user1,user2,user3)
+    MaxLength: '15'
+
+  User11:
+    NoEcho: 'false'
+    Type: String
+    Description: Add an Engineer user name
+    Default: "Elvie"
+    MinLength: '4'
+    MaxLength: '15'
+
+  User12:
+    NoEcho: 'false'
+    Type: String
+    Description: Add an Engineer user name
+    Default: "Sunday"
+    MinLength: '4'
+    MaxLength: '15'
+
+  User13:
+    NoEcho: 'false'
+    Type: String
+    Description: Add an Engineer user name
+    Default: "Maturin"
+    MinLength: '4'
+    MaxLength: '15'
+
+  User14:
+    NoEcho: 'false'
+    Type: String
+    Description: Add an Engineer user name
+    Default: "Jonathan"
+    MinLength: '4'
+    MaxLength: '15'
+
+  User15:
+    NoEcho: 'false'
+    Type: String
+    Description: Add an Engineer user name
+    Default: "Tcherry"
+    MinLength: '4'
+    MaxLength: '15'
+
+  User16:
+    NoEcho: 'false'
+    Type: String
+    Description: Add an Engineer user name
+    Default: "Mike"
+    MinLength: '4'
+    MaxLength: '15'
+
+
+  User2:
+    NoEcho: 'false'
+    Type: String
+    Description: Add a Security user name
+    Default: "SecurityUser"
+    MinLength: '4'
+    MaxLength: '15'
+    ConstraintDescription: Must be a comma separated list of IAM User names (SecurityUser1,SecurityUser2)
+
+  User3:
+    NoEcho: 'false'
+    Type: String
+    Description: Add an Operations user name
+    Default: "OperationsUser"
+    MinLength: '4'
+    MaxLength: '15'
+    ConstraintDescription: Must be a comma separated list of IAM User names (OperationsUser1,OperationsUser2)
     
 
   Password:
@@ -25,10 +91,10 @@ Parameters:
     ConstraintDescription: the password must be between 1 and 15 characters
 
 Resources:
-  MyIamGroup:
+  NasIamGroup1:
     Type: AWS::IAM::Group
     Properties:
-      GroupName: !Sub ${OwnerName}_Engineering_Team
+      GroupName: !Sub ${OwnerName}_CloudSpace_Engineering_Team
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AdministratorAccess
       Path: /
@@ -41,14 +107,14 @@ Resources:
                 Action: "aws-portal:*"
                 Resource: "*"
 
-  MyIamGroup2:
+  NasIamGroup2:
     Type: AWS::IAM::Group
     Properties:
       GroupName: !Sub ${OwnerName}_Security_Team
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AdministratorAccess
 
-  MyIamGroup3:
+  NasIamGroup3:
     Type: AWS::IAM::Group
     Properties:
       GroupName: !Sub ${OwnerName}_Operations_Team
@@ -67,15 +133,95 @@ Resources:
                   StringNotLike:
                     aws:RequestedRegion: us-east-1
 
-  NasUser:
+  NasUser10:
     Type: AWS::IAM::User
     Properties:
       Groups: 
-        - !Ref MyIamGroup
+        - !Ref NasIamGroup1
       LoginProfile:
         Password: !Ref 'Password'
         PasswordResetRequired: 'true'
-      UserName: !Ref User
+      UserName: !Ref User10
+
+  NasUser11:
+    Type: AWS::IAM::User
+    Properties:
+      Groups: 
+        - !Ref NasIamGroup1
+      LoginProfile:
+        Password: !Ref 'Password'
+        PasswordResetRequired: 'true'
+      UserName: !Ref User11
+
+  NasUser12:
+    Type: AWS::IAM::User
+    Properties:
+      Groups: 
+        - !Ref NasIamGroup1
+      LoginProfile:
+        Password: !Ref 'Password'
+        PasswordResetRequired: 'true'
+      UserName: !Ref User12 
+
+  NasUser13:
+    Type: AWS::IAM::User
+    Properties:
+      Groups: 
+        - !Ref NasIamGroup1
+      LoginProfile:
+        Password: !Ref 'Password'
+        PasswordResetRequired: 'true'
+      UserName: !Ref User13
+
+  NasUser14:
+    Type: AWS::IAM::User
+    Properties:
+      Groups: 
+        - !Ref NasIamGroup1
+      LoginProfile:
+        Password: !Ref 'Password'
+        PasswordResetRequired: 'true'
+      UserName: !Ref User14
+
+  NasUser15:
+    Type: AWS::IAM::User
+    Properties:
+      Groups: 
+        - !Ref NasIamGroup1
+      LoginProfile:
+        Password: !Ref 'Password'
+        PasswordResetRequired: 'true'
+      UserName: !Ref User15
+
+  NasUser16:
+    Type: AWS::IAM::User
+    Properties:
+      Groups: 
+        - !Ref NasIamGroup1
+      LoginProfile:
+        Password: !Ref 'Password'
+        PasswordResetRequired: 'true'
+      UserName: !Ref User16
+
+  NasUser2:
+    Type: AWS::IAM::User
+    Properties:
+      Groups: 
+        - !Ref NasIamGroup2
+      LoginProfile:
+        Password: !Ref 'Password'
+        PasswordResetRequired: 'true'
+      UserName: !Ref User2
+
+  NasUser3:
+    Type: AWS::IAM::User
+    Properties:
+      Groups: 
+        - !Ref NasIamGroup3
+      LoginProfile:
+        Password: !Ref 'Password'
+        PasswordResetRequired: 'true'
+      UserName: !Ref User3
 
   NasSSMRole:
     Type: AWS::IAM::Role
@@ -98,7 +244,7 @@ Resources:
   MyIamInstanceProfile:
     Type: AWS::IAM::InstanceProfile
     Properties:
-      InstanceProfileName: IamInstanceProfile
+      InstanceProfileName: Leopard-nas-IamInstanceProfile
       Path: "/"
       Roles:
         - !Ref NasSSMRole

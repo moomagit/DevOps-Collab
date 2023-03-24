@@ -1,0 +1,91 @@
+AWSTemplateFormatVersion: 2010-09-09
+# Parameters:
+  # EnvironmentName:
+  #   Description: An environment name that is prefixed to resource names
+  #   Type: String
+  #   Default: leopard-nas
+
+  # serverStack:
+  #   Type: String
+  #   Description: ServerStack
+  #   Default: serverStack #exported stack name
+
+Resources:
+# S3 Bucket
+  nasBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      AccessControl: PublicRead
+      BucketName: www.leopard.nasfinancialgroup.com
+      VersioningConfiguration:
+        Status: Enabled
+      CorsConfiguration:
+        CorsRules:
+        - AllowedHeaders:
+          - "*"
+          AllowedMethods:
+          - GET
+          AllowedOrigins:
+          - "*"
+          Id: Staticweb
+          MaxAge: 60
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: error.html
+
+  nasBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref nasBucket
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Action:
+              - 's3:GetObject'
+            Effect: Allow
+            Resource: !Join
+              - ''
+              - - 'arn:aws:s3:::'
+                - !Ref nasBucket
+                - /*
+            Principal: '*'
+
+  cloudfrontdistribution:
+    Type: AWS::CloudFront::Distribution
+    DependsOn: [nasBucket, nasBucketPolicy]
+    Properties:
+      DistributionConfig:
+        Aliases:
+          - www.leopard.nasfinancialgroup.com
+        DefaultCacheBehavior: 
+          CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
+          ForwardedValues:
+            QueryString: 'false'
+            Cookies:
+              Forward: none
+          TargetOriginId: www.leopard.nasfinancialgroup.com
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods: [GET, HEAD]
+        Enabled: 'true'
+        CNAMEs: 
+          - www.leopard.nasfinancialgroup.com
+        ViewerCertificate:
+          AcmCertificateArn: arn:aws:acm:us-east-1:362013628963:certificate/d22ec49d-902c-4953-baf6-c42d6df11e5e
+          MinimumProtocolVersion: TLSv1.2_2021
+          SslSupportMethod: sni-only
+        Origins:
+          - CustomOriginConfig:
+              HTTPPort: 80
+              HTTPSPort: 443
+              OriginKeepaliveTimeout: 30
+              OriginProtocolPolicy: match-viewer
+              OriginReadTimeout: 30
+              OriginSSLProtocols: 
+              - TLSv1.2
+            DomainName: www.leopard.nasfinancialgroup.com.s3-website.us-east-2.amazonaws.com
+              # Fn::ImportValue:
+              #   Fn::Sub: '${serverStack}-WebsiteURL'
+            Id: www.leopard.nasfinancialgroup.com
+                # Fn::ImportValue:
+            #   Fn::Sub: '${serverStack}-WebsiteArn'
+            # OriginPath: /index.html
