@@ -1,0 +1,39 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.9 #install python 3.9 version
+  pre_build:
+    commands:
+      - echo checking the version of python installedcodebuild-codebuildProject-service-role
+      - python3 --version
+      - echo installing cfn-lint
+      - pip3 install cfn-lint
+      - echo checking the cfn-lint version installed
+      - cfn-lint --version
+
+  build:
+    commands:
+      - echo validating the cfn template
+      - cfn-lint permissionStack.yml
+      - cfn-lint networkStack.yml
+      - cfn-lint serverStack.yml
+      - cfn-lint dnsStack.yml
+      - echo CloudFormation Template Build started on `date`**
+      - aws cloudformation package --template-file permissionStack.yml --s3-bucket leopard-nasproject --output-template-file outPutTemplate.yml
+      - aws cloudformation package --template-file networkStack.yml --s3-bucket leopard-nasproject --output-template-file outPutTemplate1.yml
+      - aws cloudformation package --template-file serverStack.yml --s3-bucket leopard-nasproject --output-template-file outPutTemplate2.yml
+      - aws cloudformation package --template-file dnsStack.yml --s3-bucket leopard-nasproject --output-template-file outPutTemplate3.yml
+  post_build:
+    commands:
+      - echo Build completed on `date`
+artifacts:
+  files:
+    - permissionStack.yml
+    - networkStack.yml
+    - serverStack.yml
+    - outPutTemplate.yml
+    - outPutTemplate1.yml
+    - outPutTemplate2.yml
+    - outPutTemplate3.yml
